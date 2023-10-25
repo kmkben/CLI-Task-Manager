@@ -21,9 +21,9 @@ int getLongestTask(TaskManager* task_manager)
     return max;
 }
 
-void write_task_to_file(Task* task, FILE* file)
+void write_task_to_file(Task* task)
 {
-    file = fopen(FILE_NAME, "a");
+    FILE* file = fopen(FILE_NAME, "a");
 
     if (file != NULL)
     {
@@ -36,9 +36,9 @@ void write_task_to_file(Task* task, FILE* file)
     }
 }
 
-void write_task_manager_to_file(TaskManager* task_manager, FILE *file)
+void write_task_manager_to_file(TaskManager* task_manager)
 {
-    file = fopen(FILE_NAME, "w");
+    FILE* file = fopen(FILE_NAME, "w");
     
     if (file != NULL)
     {
@@ -54,23 +54,23 @@ void write_task_manager_to_file(TaskManager* task_manager, FILE *file)
     }
 }
 
-void get_task_manager_from_file(TaskManager* task_manager, FILE* file)
+void get_task_manager_from_file(TaskManager* task_manager)
 {
     init_task_manager(task_manager);
 
-    file = fopen(FILE_NAME, "r");
+    FILE* file = fopen(FILE_NAME, "r");
 
     if (file != NULL)
     {
         int id;
         char description[100];
         char deadline[20];
-        //char status[100];
+        char status[100];
         int completed;
 
         char line[1048];
         char* splited[10];
-        char delimiter[] = " | ";
+        char delimiter[] = "|";
         char* ptr; 
 
         while(fgets(line, sizeof(line), file) != NULL)
@@ -88,7 +88,14 @@ void get_task_manager_from_file(TaskManager* task_manager, FILE* file)
             id = atoi(splited[0]);
             strcpy(description, splited[1]);
             strcpy(deadline, splited[2]);
-            completed = (strcmp(splited[3], "Done") == 0);
+            strcpy(status, splited[3]);
+
+            trim(status);
+
+            completed = (strncmp(status, "Done", 4) == 0);
+
+            trim(description);
+            trim(deadline);
 
             Task task;
             task.id = id;
@@ -111,7 +118,6 @@ void get_task_manager_from_file(TaskManager* task_manager, FILE* file)
 
 void add_task(TaskManager* task_manager, char* description, char* deadline)
 {
-    printf("Deadline to add: %s\n", deadline);
     Task task;
     task.id = task_manager->count + 1;
     strcpy(task.description, description);
@@ -128,6 +134,8 @@ void add_task(TaskManager* task_manager, char* description, char* deadline)
 
     task_manager->tasks[task_manager->count] = task;
     task_manager->count++;
+
+    write_task_to_file(&task);
 }
 
 void complete_task(TaskManager* task_manager, int task_id)
@@ -135,6 +143,7 @@ void complete_task(TaskManager* task_manager, int task_id)
     if (task_id >= 1 && task_id <= task_manager->count)
     {
         task_manager->tasks[task_id - 1].completed = 1;
+        printf("Kudos ! You've finished this task.\n\n");
     }
     else
     {
@@ -150,6 +159,8 @@ void delete_task(TaskManager* task_manager, int task_id)
         {
             task_manager->tasks[i] = task_manager->tasks[i + 1];
         }
+
+
     }
     else
     {
@@ -164,6 +175,7 @@ void find_task(TaskManager* task_manager, char* keyword)
 
 void list_tasks(TaskManager* task_manager)
 {
+    
     int maxLength = getLongestTask(task_manager);
     printf("m: %d", maxLength);
     char message_id[10] = " ID ";
@@ -177,24 +189,26 @@ void list_tasks(TaskManager* task_manager)
     {
         printf("-");
     }
-    printf("+------------+----------+\n");
+    printf("+------------+--------------+\n");
     printf("| ID |");
-    for (int j = 0; j < (maxLength - 5) / 2 + 3; ++j)
+    int middle = (maxLength - 5) / 2;
+    for (int j = 0; j < middle + 3; ++j)
     {
         printf(" ");
     }
     printf("TASKS");
-    for (int i = 0; i < (maxLength - 5)/2 + 3; ++i)
+    int middle2 = (middle % 2 == 0 ? middle : middle + 1);
+    for (int i = 0; i < middle2 + 3; ++i)
     {
         printf(" ");
     }
-    printf("|  DEADLINE  |  STATUS  |\n");
+    printf("|  DEADLINE  |    STATUS    |\n");
     printf("+----+");
     for (int i = 0; i < maxLength + 6; ++i)
     {
         printf("-");
     }
-    printf("+------------+---------+\n");
+    printf("+------------+-------------+\n");
 
 
 
@@ -226,11 +240,11 @@ void list_tasks(TaskManager* task_manager)
         
         if (task_manager->tasks[i].completed)
         {
-            printf(" Done     |");
+            printf(" Done         |");
         }
         else
         {
-            printf(" Not yet  |");
+            printf(" In progress  |");
         }
         printf("\n");
 
@@ -239,8 +253,10 @@ void list_tasks(TaskManager* task_manager)
         {
             printf("-");
         }
-        printf("+------------+----------+\n");
+        printf("+------------+--------------+\n");
+        
     }
+    printf("\n");
 }
 
 
@@ -309,7 +325,6 @@ int isDateValid(char *date) {
 	month = atoi(split[1]);
 	year = atoi(split[2]);
 
-    printf("date: %s and %d / %d / %d\n", date, day, month, year);
     
     if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > 2100) 
     {
@@ -326,9 +341,7 @@ int isDateValid(char *date) {
         sprintf(dayStr, "%d", day);   
 
     }
-    printf("Day : %s\n", dayStr);
     strcat(dayStr, "/");
-    printf("Day : %s\n", dayStr);
 
 
     if (month < 10)
@@ -340,21 +353,35 @@ int isDateValid(char *date) {
         sprintf(monthStr, "%d", month);   
 
     }
-    printf("Month : %s\n", monthStr);
 
     strcat(monthStr, "/");
-    printf("Month : %s\n", monthStr);
 
     sprintf(yearStr, "%d", year);
 
     strcpy(date, "");
-    printf("Date ..: %s\n", date);
     strcat(date, dayStr);
-    printf("Date ..: %s\n", date);
     strcat(date, monthStr);
-    printf("Date ..: %s\n", date);
     strcat(date, yearStr);
-    printf("Date ..: %s\n", date);
 
     return 1;
 }
+
+
+void trim(char *str) {
+    int start = 0, end = strlen(str) - 1;
+
+    while (isspace(str[start])) {
+        start++;
+    }
+
+    while (end > start && isspace(str[end])) {
+        end--;
+    }
+
+    for (int i = start; i <= end; i++) {
+        str[i - start] = str[i];
+    }
+
+    str[end - start + 1] = '\0';
+}
+
