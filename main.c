@@ -33,17 +33,16 @@ int main(int argc, char* argv[])
             sscanf(command, "add %[^\n]", str);
             int len_task = strlen(str) - 10;
             extractSubstring(str, 0, len_task - 1, task);
-            printf("Task: '%s'\n", task);
             extractSubstring(str, len_task, 10, deadline);
-            printf("Deadline: '%s'\n", deadline);
             
             if (isDateValid(deadline))
             {
                 add_task(&task_manager, task, deadline);
+                printf("Task added\n\n");
             }
             else
             {
-                printf(" Error: Date invalid !\n");
+                printf(" Error: Date invalid !\n\n");
             }
         } 
         else if (strncmp(command, "complete", 8) == 0) 
@@ -51,7 +50,12 @@ int main(int argc, char* argv[])
             int taskId;
             
             sscanf(command, "complete %d", &taskId);
+
+            get_task_manager_from_file(&task_manager);
+
             complete_task(&task_manager, taskId);
+
+            write_task_manager_to_file(&task_manager);
         } 
         else if (strncmp(command, "delete", 6) == 0) 
         {
@@ -73,6 +77,7 @@ int main(int argc, char* argv[])
         }
         else if (strncmp(command, "list", 4) == 0) 
         {
+            get_task_manager_from_file(&task_manager);
             
             list_tasks(&task_manager);
         } 
