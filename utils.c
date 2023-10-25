@@ -21,6 +21,94 @@ int getLongestTask(TaskManager* task_manager)
     return max;
 }
 
+void write_task_to_file(Task* task, FILE* file)
+{
+    file = fopen(FILE_NAME, "a");
+
+    if (file != NULL)
+    {
+        fprintf(file, "%d | %s | %s | %s\n", task->id, task->description, task->deadline, task->completed ? "Done" : "In Progress");
+        fclose(file);
+    }
+    else
+    {
+        printf("Error: file tasks.txt not found\n");
+    }
+}
+
+void write_task_manager_to_file(TaskManager* task_manager, FILE *file)
+{
+    file = fopen(FILE_NAME, "w");
+    
+    if (file != NULL)
+    {
+        for (int i = 0; i < task_manager->count; ++i)
+        {
+            fprintf(file, "%d | %s | %s | %s\n", task_manager->tasks[i].id, task_manager->tasks[i].description, task_manager->tasks[i].deadline, task_manager->tasks[i].completed ? "Done" : "In Progress");
+        }
+        fclose(file);
+    }
+    else
+    {
+        printf("Error: file tasks.txt not found\n");
+    }
+}
+
+void get_task_manager_from_file(TaskManager* task_manager, FILE* file)
+{
+    init_task_manager(task_manager);
+
+    file = fopen(FILE_NAME, "r");
+
+    if (file != NULL)
+    {
+        int id;
+        char description[100];
+        char deadline[20];
+        //char status[100];
+        int completed;
+
+        char line[1048];
+        char* splited[10];
+        char delimiter[] = " | ";
+        char* ptr; 
+
+        while(fgets(line, sizeof(line), file) != NULL)
+        {
+            ptr = strtok(line, delimiter);
+            int i = 0;
+
+            while (ptr != NULL)
+            {
+                splited[i] = ptr;
+                i++;
+                ptr = strtok(NULL, delimiter);
+            }
+
+            id = atoi(splited[0]);
+            strcpy(description, splited[1]);
+            strcpy(deadline, splited[2]);
+            completed = (strcmp(splited[3], "Done") == 0);
+
+            Task task;
+            task.id = id;
+            strcpy(task.description, description);
+            strcpy(task.deadline, deadline);
+            task.completed = completed;
+
+            task_manager->tasks = realloc(task_manager->tasks, (task_manager->count + 1) * sizeof(Task));
+
+            task_manager->tasks[task_manager->count] = task;
+            task_manager->count++;        
+
+        }
+    }
+    else
+    {
+        printf("Error: File tasks.txt not found !\n");
+    }
+}
+
 void add_task(TaskManager* task_manager, char* description, char* deadline)
 {
     printf("Deadline to add: %s\n", deadline);
